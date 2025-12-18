@@ -1,0 +1,16 @@
+services:
+  search-to-sheets-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: search-to-sheets
+    ports:
+      - "1024:1024"
+    volumes:
+      - ./src:/app/src
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app/src
+    command: ["langgraph", "dev", "--host", "0.0.0.0", "--port", "1024"]
+    restart: unless-stopped

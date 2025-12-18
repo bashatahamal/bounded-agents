@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.git/
+.venv/
+.mypy_cache/
+.env
+sts/
+*copy*
+.langgraph_api/
