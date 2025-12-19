@@ -4,7 +4,7 @@ from langsmith.wrappers import wrap_openai
 from openai import OpenAI
 
 from config import settings
-
+import asyncio
 
 class LLMClient:
     """Thin wrapper around the OpenAI Chat Completions API."""
@@ -81,6 +81,26 @@ class LLMClient:
         )
 
         return response.choices[0].message.content or ""
+    
+    
+    async def completion_async(
+        self,
+        *,
+        user_input: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        model: str = DEFAULT_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
+    ) -> str:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self.completion(
+                user_input=user_input,
+                system_prompt=system_prompt,
+                model=model,
+                temperature=temperature,
+            ),
+        )
 
     @staticmethod
     def _build_messages(

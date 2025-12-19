@@ -2,23 +2,43 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
 
 # from readability import Document
 from tavily import TavilyClient
 
-from config import settings
-from graphs.states.research import ResearchState
+from config import prompt_general, settings
+from graphs.states.research import ResearchState, SearchResult
+from integrations.llm import llm_client
 
 tavily = TavilyClient(api_key=settings.TAVILY_API_KEY)
 
 SERPER_ENDPOINT = "https://google.serper.dev/search"
+headers = {
+    "X-API-KEY": settings.SERPER_API_KEY,
+    "Content-Type": "application/json",
+}
 
 
+# def fetch_search_snippets(company_name: str) -> str:
+#     query = f"What does {company_name} do company"
+
+#     results = tavily.search(query=query, search_depth="basic", max_results=5)
+
+#     snippets = []
+#     for r in results.get("results", []):
+#         if r.get("content"):
+#             snippets.append(r["content"])
+
+#     return "\n".join(snippets) if snippets else None
+
+
+# tavily
 def fetch_search_snippets(company_name: str) -> str:
-    query = f"What does {company_name} do company"
+    query = f"Latest {company_name} company overview, products, founders, financial information, news"
 
-    results = tavily.search(query=query, search_depth="basic", max_results=5)
+    results = tavily.search(query=query, search_depth="basic", max_results=8)
 
     snippets = []
     for r in results.get("results", []):
@@ -59,6 +79,65 @@ def discover_linkedin_company(company_name: str) -> str | None:
     return None
 
 
+def fetch_search_snippets_serper(company_name: str) -> str | None:
+    query = (
+        f"Latest {company_name} company overview, products, founders, "
+        f"financial information, news"
+    )
+
+    payload = {
+        "q": query,
+        "num": 8,
+    }
+
+    resp = requests.post(
+        SERPER_ENDPOINT,
+        headers=headers,
+        json=payload,
+        timeout=10,
+    )
+    resp.raise_for_status()
+
+    data = resp.json()
+
+    snippets = []
+
+    for item in data.get("organic", []):
+        snippet = item.get("snippet")
+        if snippet:
+            snippets.append(snippet)
+
+    return "\n".join(snippets) if snippets else None
+
+
+def fetch_linkedin_snippet_serper(company_name: str) -> str | None:
+    query = f"site:linkedin.com/company {company_name}"
+
+    payload = {
+        "q": query,
+        "num": 3,
+    }
+
+    resp = requests.post(
+        SERPER_ENDPOINT,
+        headers=headers,
+        json=payload,
+        timeout=10,
+    )
+    resp.raise_for_status()
+
+    data = resp.json()
+
+    for item in data.get("organic", []):
+        link = item.get("link", "").lower()
+        snippet = item.get("snippet", "")
+
+        if "linkedin.com/company" in link and snippet:
+            return snippet
+
+    return None
+
+
 @traceable
 def discover_official_website(company_name: str) -> str | None:
     EXCLUDED_DOMAINS = (
@@ -69,10 +148,6 @@ def discover_official_website(company_name: str) -> str | None:
         "crunchbase.com",
         "instagram.com",
     )
-    headers = {
-        "X-API-KEY": settings.SERPER_API_KEY,
-        "Content-Type": "application/json",
-    }
 
     payload = {
         "q": f"{company_name} official website",
@@ -146,7 +221,7 @@ def extract_text_from_url(url: str) -> str | None:
     text = soup.body.get_text(separator="\n", strip=True)
 
     # Basic cleanup: drop very short lines
-    lines = [l for l in text.splitlines() if len(l.strip()) > 30]
+    lines = [x for x in text.splitlines() if len(x.strip()) > 30]
     text = "\n".join(lines)
 
     return text[:MAX_CHARS] if text else None
@@ -193,6 +268,7 @@ def fetch_website(state: ResearchState) -> dict:
 def fetch_linkedin(state: ResearchState) -> dict:
     try:
         return {"linkedin_text": fetch_linkedin_snippet(state["company_name"])}
+        # return {"linkedin_text": fetch_linkedin_snippet_serper(state["company_name"])}
     except Exception as e:
         return {
             "linkedin_text": None,
@@ -202,12 +278,91 @@ def fetch_linkedin(state: ResearchState) -> dict:
 
 def fetch_search(state: ResearchState) -> dict:
     try:
-        return {"search_text": fetch_search_snippets(state["company_name"])}
+        return {"results": fetch_search_snippets(state["company_name"])}
+        # return {"results": fetch_search_snippets_serper(state["company_name"])}
     except Exception as e:
         return {
-            "search_text": None,
+            "results": None,
             "errors": [f"Search fetch failed: {e}"],
         }
+
+
+# def search_general(state: SearchResult) -> dict:
+#     prompt_template = PromptTemplate(
+#         template=prompt_general["search_general"],
+#         input_variables=["search_result"],
+#     )
+#     result = llm_client.completion(
+#         user_input=prompt_template.format(search_result=state["results"])
+#     )
+#     return {"search_general": result}
+
+
+# def search_founder(state: SearchResult) -> dict:
+#     prompt_template = PromptTemplate(
+#         template=prompt_general["search_founder"],
+#         input_variables=["search_result"],
+#     )
+
+#     result = llm_client.completion(
+#         user_input=prompt_template.format(search_result=state["results"])
+#     )
+
+#     return {"search_founder": result}
+
+
+# def search_finance(state: SearchResult) -> dict:
+#     prompt_template = PromptTemplate(
+#         template=prompt_general["search_finance"],
+#         input_variables=["search_result"],
+#     )
+
+#     result = llm_client.completion(
+#         user_input=prompt_template.format(search_result=state["results"])
+#     )
+
+#     return {"search_finance": result}
+
+
+# def search_news(state: SearchResult) -> dict:
+#     prompt_template = PromptTemplate(
+#         template=prompt_general["search_news"],
+#         input_variables=["search_result"],
+#     )
+
+#     result = llm_client.completion(
+#         user_input=prompt_template.format(search_result=state["results"])
+#     )
+
+#     return {"search_news": result}
+
+import asyncio
+
+async def search_all(state: SearchResult) -> dict:
+    results = state["results"]
+
+    async def run_prompt(prompt_key: str) -> str:
+        template = PromptTemplate(
+            template=prompt_general[prompt_key],
+            input_variables=["search_result"],
+        )
+        return await llm_client.completion_async(
+            user_input=template.format(search_result=results)
+        )
+
+    general, founder, finance, news = await asyncio.gather(
+        run_prompt("search_general"),
+        run_prompt("search_founder"),
+        run_prompt("search_finance"),
+        run_prompt("search_news"),
+    )
+
+    return {
+        "search_general": general,
+        "search_founder": founder,
+        "search_finance": finance,
+        "search_news": news,
+    }
 
 
 # from langsmith import traceable

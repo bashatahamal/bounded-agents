@@ -1,6 +1,6 @@
 from langgraph.graph import START, StateGraph, END
 
-from graphs.nodes.fetcher import fetch_linkedin, fetch_search, fetch_website
+from graphs.nodes.fetcher import fetch_linkedin, fetch_search, fetch_website, search_all
 from graphs.nodes.judge import build_structured_input, judge_node, need_judge
 from graphs.nodes.summarizer import summarize
 from graphs.nodes.validation import select_primary_and_secondary, validate_sources
@@ -21,6 +21,8 @@ graph.add_node("judge", judge_node)
 graph.add_node("build_input", build_structured_input)
 graph.add_node("summarize", summarize)
 
+graph.add_node("search_all", search_all)
+
 # -----------------------
 # START → parallel fetch
 # -----------------------
@@ -28,12 +30,16 @@ graph.add_edge(START, "fetch_website")
 graph.add_edge(START, "fetch_linkedin")
 graph.add_edge(START, "fetch_search")
 
+
+graph.add_edge("fetch_search", "search_all")
+
 # -----------------------
 # Fan-in: wait for ALL fetches
 # -----------------------
 graph.add_edge("fetch_website", "validate")
 graph.add_edge("fetch_linkedin", "validate")
-graph.add_edge("fetch_search", "validate")
+graph.add_edge("search_all", "validate")
+
 
 # -----------------------
 # Sequential processing

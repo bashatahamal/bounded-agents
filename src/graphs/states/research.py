@@ -1,7 +1,7 @@
 from typing import Dict, Optional, TypedDict
 from typing_extensions import Annotated
 from langgraph.channels import Topic
-
+import operator
 
 
 class ResearchState(TypedDict):
@@ -10,7 +10,13 @@ class ResearchState(TypedDict):
     # Raw sources
     website_text: Optional[str]
     linkedin_text: Optional[str]
-    search_text: Optional[str]
+    search_text: Optional[Dict]
+
+    # search results
+    search_general: Optional[str]
+    search_founder: Optional[str]
+    search_finance: Optional[str]
+    search_news: Optional[str]
 
     # Validation
     website_valid: bool
@@ -30,5 +36,7 @@ class ResearchState(TypedDict):
     # Final result
     summary: Optional[str]
 
-    errors: Annotated[list[str], Topic(list[str])]
+    errors: Annotated[list[str], operator.add]
 
+class SearchResult(TypedDict):
+    results: Optional[str]
