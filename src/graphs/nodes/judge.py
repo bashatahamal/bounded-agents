@@ -7,33 +7,99 @@ from graphs.states.research import ResearchState
 from integrations.llm import llm_client
 
 # Required keys expected in a search result
-# FIELD_KEYWORDS = {
-#     "products_or_services": ["product", "service", "platform", "solution"],
-#     "industry": ["industry", "sector", "market"],
-#     "target_customers": ["customer", "client", "business", "enterprise", "SMB"],
-# }
 FIELD_KEYWORDS = {
-    "products_or_services": ["product", "service", "platform", "solution"],
-    "industry": ["industry", "sector", "market"],
-    "target_customers": ["customer", "client", "business", "enterprise", "SMB"],
-    "value_proposition": ["value", "benefit", "solve", "problem"],
-    "business_model": ["subscription", "pricing", "revenue", "license"],
-    "use_cases": ["use case", "workflow", "application"],
-    "technology_or_delivery": ["cloud", "AI", "API", "software"],
+    "products_or_services": [
+        "product",
+        "service",
+        "platform",
+        "solution",
+        "offering",
+        "tool",
+    ],
+    "industry": ["industry", "sector", "market", "vertical", "domain"],
+    "target_customers": [
+        "customer",
+        "client",
+        "user",
+        "buyer",
+        "business",
+        "enterprise",
+        "company",
+        "organization",
+        "smb",
+        "startup",
+    ],
+    "value_proposition": [
+        "value",
+        "benefit",
+        "advantage",
+        "solve",
+        "address",
+        "problem",
+        "pain point",
+        "differentiation",
+    ],
+    "business_model": [
+        "business model",
+        "subscription",
+        "pricing",
+        "revenue",
+        "monetization",
+        "license",
+        "fee",
+    ],
+    "use_cases": ["use case", "workflow", "application", "scenario", "example"],
+    "technology_or_delivery": [
+        "technology",
+        "tech stack",
+        "cloud",
+        "ai",
+        "ml",
+        "api",
+        "software",
+        "saas",
+        "infrastructure",
+    ],
+    "founders": ["founder", "co-founder", "founding team", "established by", "creator"],
+    "finance": [
+        "funding",
+        "investment",
+        "revenue",
+        "profit",
+        "valuation",
+        "financial",
+        "series a",
+        "series b",
+        "seed",
+        "vc",
+    ],
+    "news": [
+        "news",
+        "announcement",
+        "press release",
+        "update",
+        "launch",
+        "partnership",
+        "acquisition",
+        "merger",
+    ],
 }
 
 
-def build_structured_input(state: ResearchState) -> ResearchState:
+def build_structured_output(field_keywords: dict, state: dict | None = None) -> dict:
     structured = {
-        "overview": state.get("primary_source").get("text") or "Not publicly available",
-        "industry": "Not publicly available",
-        "products_or_services": "Not publicly available",
-        "target_customers": "Not publicly available",
-        "value_proposition": "Not publicly available",
-        "business_model": "Not publicly available",
-        "use_cases": "Not publicly available",
-        "technology_or_delivery": "Not publicly available",
+        "overview": (state.get("primary_source", {}).get("text") if state else None)
+        or "Not publicly available"
     }
+
+    for field in field_keywords.keys():
+        structured[field] = "Not publicly available"
+
+    return structured
+
+
+def build_structured_input(state: ResearchState) -> ResearchState:
+    structured = build_structured_output(FIELD_KEYWORDS, state)
 
     judge = state.get("judge_output")
 

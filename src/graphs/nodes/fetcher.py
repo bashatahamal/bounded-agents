@@ -23,7 +23,7 @@ headers = {
 def fetch_search_snippets(company_name: str) -> str:
     query = f"Latest {company_name} company overview, products, founders, financial information, news"
 
-    results = tavily.search(query=query, search_depth="basic", max_results=8)
+    results = tavily.search(query=query, search_depth="basic", max_results=10)
 
     snippets = []
     for r in results.get("results", []):
@@ -252,8 +252,8 @@ def fetch_website(state: ResearchState) -> dict:
 
 def fetch_linkedin(state: ResearchState) -> dict:
     try:
-        # return {"linkedin_text": fetch_linkedin_snippet(state["company_name"])}
-        return {"linkedin_text": fetch_linkedin_snippet_serper(state["company_name"])}
+        return {"linkedin_text": fetch_linkedin_snippet(state["company_name"])}
+        # return {"linkedin_text": fetch_linkedin_snippet_serper(state["company_name"])}
     except Exception as e:
         return {
             "linkedin_text": None,
@@ -263,8 +263,8 @@ def fetch_linkedin(state: ResearchState) -> dict:
 
 def fetch_search(state: ResearchState) -> dict:
     try:
-        # return {"results": fetch_search_snippets(state["company_name"])}
-        return {"results": fetch_search_snippets_serper(state["company_name"])}
+        return {"results": fetch_search_snippets(state["company_name"])}
+        # return {"results": fetch_search_snippets_serper(state["company_name"])}
     except Exception as e:
         return {
             "results": None,

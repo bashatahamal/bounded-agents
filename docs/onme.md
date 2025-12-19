@@ -120,7 +120,7 @@ This approach mirrors practices from data engineering, journalism, and complianc
 
 ---
 
-### 4. Observability and Iteration (LangSmith)
+## 4. Observability and Iteration (LangSmith)
 
 During development, LangSmith is used for observability 
 * Node-level tracing
@@ -132,7 +132,7 @@ This makes it possible to trace how intermediate decisions and inputs influence 
 
 ---
 
-### 5. Technology Choices: LangGraph + LangSmith Together
+## 5. Technology Choices: LangGraph + LangSmith Together
 
 LangGraph and LangSmith are used together to support **continuity during development**.
 
@@ -160,7 +160,7 @@ Together, they support incremental development without losing context or traceab
 
 ---
 
-### 6. Design for Continuity and Extensibility
+## 6. Design for Continuity and Extensibility
 
 The system is intentionally composed of **separate, single-responsibility nodes** rather than a monolithic or prompt-heavy pipeline.
 
@@ -186,7 +186,7 @@ For example:
 
 ---
 
-### 7. Possible Improvements and Future Continuity
+## 7. Possible Improvements and Future Continuity
 
 The current design intentionally stops short of additional complexity, but leaves room for incremental improvement, including:
 
@@ -201,4 +201,6 @@ Because authority, control flow, and fallback logic are already explicit, these 
 
 ---
 
-### last historical trial and error node design and snippet plus minus
+## 8. last historical trial and error node design and snippet plus minus
+### link to google sheet 
+

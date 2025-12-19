@@ -11,10 +11,11 @@ RUN apt-get update \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# -----------------------
-# 1. Copy ONLY dependency metadata
-# -----------------------
+# copy ONLY dependency metadata
 COPY pyproject.toml README.md langgraph.json ./
+
+# Copy source BEFORE install
+COPY src ./src
 
 # Install build tooling once
 RUN pip install --upgrade pip setuptools wheel
@@ -25,10 +26,8 @@ RUN pip install .
 # Install LangGraph CLI (rarely changes)
 RUN pip install "langgraph-cli[inmem]>=0.1.71"
 
-# -----------------------
-# 2. Copy application code LAST
-# -----------------------
-COPY src ./src
+# copy application code LAST
+# COPY src ./src
 
 EXPOSE 1024
 
