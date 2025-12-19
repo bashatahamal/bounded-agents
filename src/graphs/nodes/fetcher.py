@@ -254,7 +254,7 @@ def crawl_official_website(company_name: str) -> str | None:
 
     return "\n".join(collected) if collected else None
 
-
+# Node
 def fetch_website(state: ResearchState) -> dict:
     try:
         return {"website_text": crawl_official_website(state["company_name"])}
@@ -267,8 +267,8 @@ def fetch_website(state: ResearchState) -> dict:
 
 def fetch_linkedin(state: ResearchState) -> dict:
     try:
-        return {"linkedin_text": fetch_linkedin_snippet(state["company_name"])}
-        # return {"linkedin_text": fetch_linkedin_snippet_serper(state["company_name"])}
+        # return {"linkedin_text": fetch_linkedin_snippet(state["company_name"])}
+        return {"linkedin_text": fetch_linkedin_snippet_serper(state["company_name"])}
     except Exception as e:
         return {
             "linkedin_text": None,
@@ -278,8 +278,8 @@ def fetch_linkedin(state: ResearchState) -> dict:
 
 def fetch_search(state: ResearchState) -> dict:
     try:
-        return {"results": fetch_search_snippets(state["company_name"])}
-        # return {"results": fetch_search_snippets_serper(state["company_name"])}
+        # return {"results": fetch_search_snippets(state["company_name"])}
+        return {"results": fetch_search_snippets_serper(state["company_name"])}
     except Exception as e:
         return {
             "results": None,
@@ -287,82 +287,54 @@ def fetch_search(state: ResearchState) -> dict:
         }
 
 
-# def search_general(state: SearchResult) -> dict:
-#     prompt_template = PromptTemplate(
-#         template=prompt_general["search_general"],
-#         input_variables=["search_result"],
-#     )
-#     result = llm_client.completion(
-#         user_input=prompt_template.format(search_result=state["results"])
-#     )
-#     return {"search_general": result}
+def search_general(state: SearchResult) -> dict:
+    prompt_template = PromptTemplate(
+        template=prompt_general["search_general"],
+        input_variables=["search_result"],
+    )
+    result = llm_client.completion(
+        user_input=prompt_template.format(search_result=state["results"])
+    )
+    return {"search_general": result}
 
 
-# def search_founder(state: SearchResult) -> dict:
-#     prompt_template = PromptTemplate(
-#         template=prompt_general["search_founder"],
-#         input_variables=["search_result"],
-#     )
-
-#     result = llm_client.completion(
-#         user_input=prompt_template.format(search_result=state["results"])
-#     )
-
-#     return {"search_founder": result}
-
-
-# def search_finance(state: SearchResult) -> dict:
-#     prompt_template = PromptTemplate(
-#         template=prompt_general["search_finance"],
-#         input_variables=["search_result"],
-#     )
-
-#     result = llm_client.completion(
-#         user_input=prompt_template.format(search_result=state["results"])
-#     )
-
-#     return {"search_finance": result}
-
-
-# def search_news(state: SearchResult) -> dict:
-#     prompt_template = PromptTemplate(
-#         template=prompt_general["search_news"],
-#         input_variables=["search_result"],
-#     )
-
-#     result = llm_client.completion(
-#         user_input=prompt_template.format(search_result=state["results"])
-#     )
-
-#     return {"search_news": result}
-
-import asyncio
-
-async def search_all(state: SearchResult) -> dict:
-    results = state["results"]
-
-    async def run_prompt(prompt_key: str) -> str:
-        template = PromptTemplate(
-            template=prompt_general[prompt_key],
-            input_variables=["search_result"],
-        )
-        return await llm_client.completion_async(
-            user_input=template.format(search_result=results)
-        )
-
-    general, founder, finance, news = await asyncio.gather(
-        run_prompt("search_general"),
-        run_prompt("search_founder"),
-        run_prompt("search_finance"),
-        run_prompt("search_news"),
+def search_founder(state: SearchResult) -> dict:
+    prompt_template = PromptTemplate(
+        template=prompt_general["search_founder"],
+        input_variables=["search_result"],
     )
 
-    return {
-        "search_general": general,
-        "search_founder": founder,
-        "search_finance": finance,
-        "search_news": news,
-    }
+    result = llm_client.completion(
+        user_input=prompt_template.format(search_result=state["results"])
+    )
+
+    return {"search_founder": result}
+
+
+def search_finance(state: SearchResult) -> dict:
+    prompt_template = PromptTemplate(
+        template=prompt_general["search_finance"],
+        input_variables=["search_result"],
+    )
+
+    result = llm_client.completion(
+        user_input=prompt_template.format(search_result=state["results"])
+    )
+
+    return {"search_finance": result}
+
+
+def search_news(state: SearchResult) -> dict:
+    prompt_template = PromptTemplate(
+        template=prompt_general["search_news"],
+        input_variables=["search_result"],
+    )
+
+    result = llm_client.completion(
+        user_input=prompt_template.format(search_result=state["results"])
+    )
+
+    return {"search_news": result}
 
 
 # from langsmith import traceable

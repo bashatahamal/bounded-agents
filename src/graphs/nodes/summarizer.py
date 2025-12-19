@@ -20,4 +20,10 @@ def call_llm_summarizer(structured_input: dict) -> str:
 
 
 def summarize(state: ResearchState) -> dict:
-    return {"summary": call_llm_summarizer(state["structured_input"])}
+    if state.get("summarized"):
+        return {}
+    structured = state.get("structured_input")
+    if not structured:
+        return {}
+
+    return {"summary": call_llm_summarizer(structured), "summarized": True}
