@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from langchain_core.prompts import PromptTemplate
 from langsmith import traceable
 
-# from readability import Document
 from tavily import TavilyClient
 
 from config import prompt_general, settings
@@ -19,20 +18,6 @@ headers = {
     "X-API-KEY": settings.SERPER_API_KEY,
     "Content-Type": "application/json",
 }
-
-
-# def fetch_search_snippets(company_name: str) -> str:
-#     query = f"What does {company_name} do company"
-
-#     results = tavily.search(query=query, search_depth="basic", max_results=5)
-
-#     snippets = []
-#     for r in results.get("results", []):
-#         if r.get("content"):
-#             snippets.append(r["content"])
-
-#     return "\n".join(snippets) if snippets else None
-
 
 # tavily
 def fetch_search_snippets(company_name: str) -> str:
@@ -335,50 +320,3 @@ def search_news(state: SearchResult) -> dict:
     )
 
     return {"search_news": result}
-
-
-# from langsmith import traceable
-# @traceable
-# def discover_official_website(company_name: str) -> str | None:
-#     query = f"{company_name} official website"
-
-#     results = tavily.search(
-#         query=query,
-#         search_depth="basic",
-#         max_results=5
-#     )
-#     print(results)
-#     for r in results.get("results", []):
-#         url = r.get("url", "")
-#         if url.startswith("http"):
-#             return url
-
-#     return None
-# from langsmith import traceable
-# @traceable
-# def discover_official_website(company_name: str) -> str | None:
-#     query = f"{company_name} official website"
-#     results = tavily.search(query=query, search_depth="basic", max_results=5)
-
-#     for r in results.get("results", []):
-#         url = r.get("url", "")
-#         if not url.startswith("http"):
-#             continue
-
-#         parsed = urlparse(url)
-#         if (
-#             parsed.netloc
-#             and company_name.lower().replace(" ", "") in parsed.netloc.lower()
-#         ):
-#             return f"{parsed.scheme}://{parsed.netloc}"
-
-#     return None
-
-# def extract_text_from_url(url: str) -> str:
-#     resp = requests.get(url, headers=HEADERS, timeout=10)
-#     resp.raise_for_status()
-
-#     doc = Document(resp.text)
-#     soup = BeautifulSoup(doc.summary(), "html.parser")
-
-#     return soup.get_text(separator="\n", strip=True)

@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
                 # If result is dict, we're done
                 if isinstance(parsed, dict):
-                    logger.debug(f"Successfully parsed JSON on attempt {attempt + 1}")
+                    # logger.debug(f"Successfully parsed JSON on attempt {attempt + 1}")
                     return parsed
 
                 # If result is still string, try parsing again
@@ -75,7 +75,7 @@ class Settings(BaseSettings):
                 gs_access = cls._parse_json_recursive(access_key)
                 if gs_access == {}:
                     raise ValueError("Failed parsed google spreadheet creds!")
-                logger.debug("Successfully Parsed Google Sheets Creds!")
+                # logger.debug("Successfully Parsed Google Sheets Creds!")
                 return gs_access
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON in GOOGLE_SHEET_ACCESS_DICT: {e}")
@@ -83,7 +83,7 @@ class Settings(BaseSettings):
         raise ValueError("Invalid Google Access Creds!")
 
 
-logger.info("Loading settings...")
+# logger.info("Loading settings...")
 settings = Settings()
 prompt_general = read_markdown_file_to_dict("src/prompts/general.md")
-logger.info("Loaded settings!")
+# logger.info("Loaded settings!")

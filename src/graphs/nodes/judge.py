@@ -65,49 +65,16 @@ def missing_fields(primary_text: str) -> list[str]:
     return missing
 
 
-# def need_judge(state: ResearchState) -> bool:
-#     # The judge helps decide which secondary source can safely fill which missing field
-#     # if not state["primary_source"]:
-#     if not len(state["secondary_sources"]) > 0:
-#         return False
-
-#     missing = missing_fields(state["primary_source"].get("text"))
-#     print(f"Missing: {missing}")
-
-#     return len(missing) > 0 and len(state["secondary_sources"]) > 0
-
-
 def need_judge(state: ResearchState) -> bool:
-    # ---- GUARD 1: already judged ----
-    # Prevent judge from running more than once
-    if state.get("judge_output") is not None:
+    # The judge helps decide which secondary source can safely fill which missing field
+    # if not state["primary_source"]:
+    if not len(state["secondary_sources"]) > 0:
         return False
 
-    primary = state.get("primary_source")
-    secondary = state.get("secondary_sources")
+    missing = missing_fields(state["primary_source"].get("text"))
+    print(f"Missing: {missing}")
 
-    # ---- GUARD 2: missing required inputs ----
-    if not primary or not isinstance(primary, dict):
-        return False
-
-    primary_text = primary.get("text")
-    if not primary_text or not isinstance(primary_text, str):
-        return False
-
-    if not secondary or not isinstance(secondary, dict):
-        return False
-
-    if len(secondary) == 0:
-        return False
-
-    # ---- CORE LOGIC ----
-    missing = missing_fields(primary_text)
-
-    # Optional debug (safe)
-    if missing:
-        print(f"Missing fields → triggering judge: {missing}")
-
-    return len(missing) > 0
+    return len(missing) > 0 and len(state["secondary_sources"]) > 0
 
 
 def call_llm_judge(primary: str, secondary: dict) -> dict:
@@ -128,16 +95,12 @@ def call_llm_judge(primary: str, secondary: dict) -> dict:
 
 
 def judge_node(state: ResearchState) -> dict:
-    if state.get("judged"):
-        return {}
-
     try:
         return {
             "judge_output": call_llm_judge(
                 primary=state["primary_source"].get("text"),
                 secondary=state["secondary_sources"],
-            ),
-            "judged": True,
+            )
         }
     except Exception as e:
         return {

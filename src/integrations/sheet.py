@@ -1,6 +1,5 @@
 import gspread
 import structlog
-
 from config import settings
 
 logger = structlog.get_logger(__name__)
@@ -108,36 +107,14 @@ class GoogleSheetsClient:
             raise Exception(f"Failed to append rows: {str(e)}")
 
 
+
 if __name__ == "__main__":
     # Example usage
     gs_cli = GoogleSheetsClient(
-        spreadsheet_id="1Jz_FgPhoU5cfWR_vgNIAFrhJu5quipcWVtiM4G6y5fM"
+        spreadsheet_id="1aA6b3Jzx4wH-EgGb29RLMOs-G1gOvlpXgwQSBMoitLM"
     )
     worksheet_names = gs_cli.get_worksheet_names()
     print("Worksheets:", worksheet_names)
 
     values = gs_cli.read_cell(worksheet_name=worksheet_names[0])
     print("Values in first worksheet:", values)
-
-    # columns = [
-    #     "Company",
-    #     "Overview",
-    #     "Bidang",
-    #     "Product",
-    #     "Official Website",
-    # ]
-    # values = [
-    #     [
-    #         f"Company {idx}",
-    #         f"Overview {idx}",
-    #         f"Bidang {idx}",
-    #         f"Product {idx}",
-    #         f"Official Website {idx}",
-    #     ]
-    #     for idx in range(10)
-    # ]
-    # gs_cli.append_rows(
-    #     columns=columns,
-    #     values=values,
-    #     worksheet_name="comp-summary",
-    # )
