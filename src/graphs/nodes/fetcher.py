@@ -23,7 +23,7 @@ headers = {
 def fetch_search_snippets(company_name: str) -> str:
     query = f"Latest {company_name} company overview, products, founders, financial information, news"
 
-    results = tavily.search(query=query, search_depth="basic", max_results=10)
+    results = tavily.search(query=query, search_depth="advanced", max_results=15)
 
     snippets = []
     for r in results.get("results", []):

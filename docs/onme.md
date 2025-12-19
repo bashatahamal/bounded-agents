@@ -5,6 +5,8 @@ This project is designed as a **deterministic, auditable, and debuggable researc
 
 The primary design goal is **control under uncertainty**. Public company information is often incomplete, biased, or conflicting. As a result, the system is engineered to make uncertainty explicit, preserve source authority, and avoid delegating trust decisions entirely to an LLM—while still leveraging the LLM’s strength in understanding and generating natural language.
 
+
+![langgraph](../assets/main-graph.png)
 ---
 
 ## 1. Workflow Orchestration with LangGraph
@@ -28,7 +30,7 @@ LangGraph is used deliberately in this procedural mode. The distinction between 
 
 ---
 
-## 2. Source Acquisition Strategy (Authority-First)
+## 2. Source Acquisition Strategy
 
 Company knowledge is gathered from multiple public sources, each assigned an explicit priority based on reliability and practical constraints.
 
@@ -74,6 +76,9 @@ This ensures:
 
 Authority and fallback logic are enforced in code rather than implied through prompting.
 
+
+![langgraph](../assets/judge-node.png)
+
 ---
 
 ## 3. LLM Role (Strictly Bounded)
@@ -107,6 +112,7 @@ Authority remains in code; language synthesis is delegated to the LLM.
 
 ---
 
+![langgraph](../assets/selectsource.png)
 ### Hybrid Merge Strategy
 
 Rather than fully trusting the LLM or enforcing rigid single-source output, the system applies a hybrid merge strategy:
@@ -129,6 +135,9 @@ During development, LangSmith is used for observability
 * Debugging incomplete, biased, or unexpected outputs
 
 This makes it possible to trace how intermediate decisions and inputs influence the final summary.
+
+![langgraph](../assets/realtime1.png)
+![langgraph](../assets/realtime2.png)
 
 ---
 
@@ -156,7 +165,8 @@ This makes it easier to:
 
 Together, they support incremental development without losing context or traceability.
 
-*(Insert LangGraph + LangSmith screenshots here)*
+![langgraph](../assets/estimation.png)
+
 
 ---
 
@@ -201,6 +211,15 @@ Because authority, control flow, and fallback logic are already explicit, these 
 
 ---
 
-## 8. last historical trial and error node design and snippet plus minus
 ### link to google sheet 
+[List Spreadsheet](https://docs.google.com/spreadsheets/d/1aA6b3Jzx4wH-EgGb29RLMOs-G1gOvlpXgwQSBMoitLM/edit?gid=415867252#gid=415867252)
+
+![input](../assets/sheets1.png)
+![output](../assets/sheets2.png)
+
+## last trial node design
+
+![lastry](../assets/lasttry.png)
+![lastry](../assets/lasttry1.png)
+
 
