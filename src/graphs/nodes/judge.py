@@ -98,26 +98,67 @@ def build_structured_output(field_keywords: dict, state: dict | None = None) -> 
     return structured
 
 
+# def build_structured_input(state: ResearchState) -> ResearchState:
+#     structured = build_structured_output(FIELD_KEYWORDS, state)
+
+#     judge = state.get("judge_output")
+
+#     # If judge is usable, enrich selectively
+#     if judge and "field_enrichment" in judge:
+#         for field, rule in judge["field_enrichment"].items():
+#             if rule.get("use_secondary"):
+#                 src = rule.get("source")
+#                 if src in state["secondary_sources"]:
+#                     structured[field] = state["secondary_sources"][src]
+
+#     # HARD FALLBACK — if judge missing or incomplete
+#     for field, value in structured.items():
+#         if value == "Not publicly available":
+#             for src in [
+#                 "website_text",
+#                 "linkedin_text",
+#                 "search_general",
+#                 "search_founder",
+#                 "search_finance",
+#                 "search_news",
+#             ]:
+#                 if state.get(src):
+#                     structured[field] = state[src]
+#                     break
+
+#     state["structured_input"] = structured
+#     return state
+
+
+def collect_gathered_knowledge(state: ResearchState) -> dict:
+    return {
+        "primary": {
+            k: v
+            for k, v in state.items()
+            if k.endswith("_text") or k.startswith("search_")
+        },
+        "secondary": state.get("secondary_sources", {}),
+    }
+
+
 def build_structured_input(state: ResearchState) -> ResearchState:
-    structured = build_structured_output(FIELD_KEYWORDS, state)
+    structured = {
+        "gathered_knowledge": collect_gathered_knowledge(state),
+        "fields": {field: "Not publicly available" for field in FIELD_KEYWORDS.keys()},
+    }
 
-    judge = state.get("judge_output")
+    judge = state.get("judge_output", {})
+    secondary_sources = state.get("secondary_sources", {})
 
-    # If judge is usable, enrich selectively
+    # ---------------------------------------
+    # Fields are populated ONLY via judge
+    # ---------------------------------------
     if judge and "field_enrichment" in judge:
         for field, rule in judge["field_enrichment"].items():
-            if rule.get("use_secondary"):
+            if rule.get("use_secondary") is True:
                 src = rule.get("source")
-                if src in state["secondary_sources"]:
-                    structured[field] = state["secondary_sources"][src]
-
-    # HARD FALLBACK — if judge missing or incomplete
-    for field, value in structured.items():
-        if value == "Not publicly available":
-            for src in ["website_text", "linkedin_text", "search_text"]:
-                if state.get(src):
-                    structured[field] = state[src]
-                    break
+                if src in secondary_sources:
+                    structured["fields"][field] = secondary_sources[src]
 
     state["structured_input"] = structured
     return state
@@ -157,7 +198,18 @@ def call_llm_judge(primary: str, secondary: dict) -> dict:
     )
 
     # return result.strip()
-    return json.loads(result)
+    # print("Raw LLM result:", repr(result))
+
+    try:
+        return json.loads(result)
+    except json.JSONDecodeError:
+        # Try to salvage JSON substring
+        start = result.find("{")
+        end = result.rfind("}") + 1
+        if start != -1 and end != -1:
+            return json.loads(result[start:end])
+        else:
+            return {"error": "Invalid JSON", "raw": result}
 
 
 def judge_node(state: ResearchState) -> dict:

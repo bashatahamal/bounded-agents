@@ -214,6 +214,9 @@ Because authority, control flow, and fallback logic are already explicit, these 
 ### link to google sheet 
 [List Spreadsheet](https://docs.google.com/spreadsheets/d/1aA6b3Jzx4wH-EgGb29RLMOs-G1gOvlpXgwQSBMoitLM/edit?gid=415867252#gid=415867252)
 
+### sample of langsmith trace
+[Sample Trace](https://smith.langchain.com/public/02933f19-da0d-4074-b18d-e4ee4c1dec8a/r)
+
 ![input](../assets/sheets1.png)
 ![output](../assets/sheets2.png)
 

@@ -20,9 +20,9 @@ class ResearchState(TypedDict):
     search_news: Annotated[Optional[str], safe_merge]
 
     # Validation flags
-    website_valid: Annotated[Optional[bool], safe_merge]
-    linkedin_valid: Annotated[Optional[bool], safe_merge]
-    search_valid: Annotated[Optional[bool], safe_merge]
+    valid_website: Annotated[Optional[bool], safe_merge]
+    valid_linkedin: Annotated[Optional[bool], safe_merge]
+    valid_search: Annotated[Optional[bool], safe_merge]
 
     # Selected sources
     primary_source: Annotated[Optional[dict], safe_merge]

@@ -30,7 +30,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--input-worksheet",
-        default="Sheet1",
+        default="Names",
         help="Worksheet containing company names",
     )
 
