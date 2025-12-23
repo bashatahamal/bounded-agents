@@ -25,5 +25,8 @@ def summarize(state: ResearchState) -> dict:
     structured = state.get("structured_input")
     if not structured:
         return {}
+    if not state.get("valid_summary", False):
+        return {}
+
 
     return {"summary": call_llm_summarizer(structured), "summarized": True}

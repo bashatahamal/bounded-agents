@@ -23,6 +23,7 @@ class ResearchState(TypedDict):
     valid_website: Annotated[Optional[bool], safe_merge]
     valid_linkedin: Annotated[Optional[bool], safe_merge]
     valid_search: Annotated[Optional[bool], safe_merge]
+    valid_summary: Annotated[Optional[bool], safe_merge]
 
     # Selected sources
     primary_source: Annotated[Optional[dict], safe_merge]

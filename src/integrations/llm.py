@@ -9,7 +9,8 @@ import asyncio
 class LLMClient:
     """Thin wrapper around the OpenAI Chat Completions API."""
 
-    DEFAULT_MODEL = "gpt-5.2"
+    # DEFAULT_MODEL = "gpt-5.2"
+    DEFAULT_MODEL = "gpt-5-mini"
     DEFAULT_TEMPERATURE = 1
 
     def __init__(self, api_key: Optional[str] = None) -> None:
