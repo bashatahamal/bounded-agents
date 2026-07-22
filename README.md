@@ -7,19 +7,32 @@ priority, what counts as a gap, and what's allowed to fill it are all decided in
 code before the LLM ever sees the data. The LLM's job is synthesis and
 judgment inside boundaries it can't step outside of — not deciding what to trust.
 
+`bounded` covers all three layers of a simple rule: **who decides the next
+step?** Nobody → a **Tool** (`Capability`), one input in, one output out.
+The code → a **Workflow** (a LangGraph pipeline with fixed step order). The
+LLM → an **Agent** (`bounded.agent`, a tool-calling loop that produces an
+auditable conversation). Only the third one hands the LLM control of *flow*
+— and even there, the loop itself stays bounded: a hard step limit, a
+scope guard that runs in code before every tool call, every failure
+captured instead of crashing.
+
 Two things live here:
 
-- **`src/bounded/`** — a small, reusable kit. Define a typed `Capability` once,
-  run it as a CLI command, a LangGraph node, or an MCP tool, without rewriting
-  the logic three times. Also ships the arbitration/judge pattern above as
-  generic, swappable pieces.
-- **`examples/company_research/`** — the reference example: a LangGraph
-  pipeline that researches a company from its website, LinkedIn, and search,
-  then writes a summary to Google Sheets. It's what proves the kit isn't just
-  an abstraction exercise.
+- **`src/bounded/`** — the reusable kit. Define a typed `Capability` once,
+  run it as a CLI command, a LangGraph node, an MCP tool, or a tool an
+  `Agent` can call — without rewriting the logic four times. Also ships the
+  arbitration/judge pattern, a Context Pack builder, and a provenance-ranked
+  memory store, all generic and swappable.
+- **Two reference examples**: `examples/company_research/` (a Workflow — a
+  LangGraph pipeline that researches a company and writes a summary to
+  Google Sheets) and `examples/task_assistant/` (an Agent — a CLI chat
+  assistant that manages tasks and remembers preferences). Neither is an
+  abstraction exercise; both are what prove the kit holds together.
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the design rationale, and
-[`docs/PROGRESS.md`](docs/PROGRESS.md) for how this repo got here.
+[`docs/PROGRESS.md`](docs/PROGRESS.md) for how this repo got here (including
+which parts of the Agent layer are unverified against a real LLM — read
+that before relying on it).
 
 ![LangGraph pipeline](assets/main-graph.png)
 
@@ -59,7 +72,7 @@ a pipeline.
 
 | Module | What it is |
 | --- | --- |
-| `capability.py` | `Capability[TIn: BaseModel, TOut: BaseModel]` — one typed input, one typed output, one `run` callable. Register once, run three ways. |
+| `capability.py` | `Capability[TIn: BaseModel, TOut: BaseModel]` — one typed input, one typed output, one `run` callable. Register once, run four ways. |
 | `registry.py` | Name → `Capability` lookup. |
 | `adapters/cli.py` | Turns a Capability's input model into an argparse subcommand automatically. |
 | `adapters/langgraph.py` | Wraps a Capability as a dict-in/dict-out LangGraph node. Also has `safe_merge`, a generic None-safe/type-aware state-merge reducer for parallel graph branches. |
@@ -67,7 +80,12 @@ a pipeline.
 | `arbitration.py` | `Source` + `select()` — deterministic primary/secondary source selection, given sources in priority order and a `field -> keywords` coverage map. |
 | `judge.py` | `parse_judge_output()` / `run_bounded_judge()` — defensively parses an LLM judge's raw text (strips code fences, smart quotes, trailing commas) and drops any field the judge invented outside the allowed schema. Raises `JudgeError` rather than ever fabricating a result. |
 | `sinks/` | `Sink` protocol + `GoogleSheetsSink`, `CsvSink`, `JsonlSink`. Swap the output target without touching pipeline logic. |
-| `llm/` | `LLMProvider` protocol + `OpenAIProvider`. |
+| `llm/` | `LLMProvider` protocol (`complete()`) + `ToolCallingLLM` protocol (`chat()`) + `OpenAIProvider`, which implements both. |
+| `agent.py` | `Agent` — an LLM-driven tool-calling loop over a list of `Capability`s. Bounded by a hard `max_steps` cutoff, an optional `guard` callable that can reject a tool call in code (`ScopeError`), and every failure (bad arguments, unknown tool, the tool's own exception) captured as a `ToolCall.error` instead of ever crashing. Produces an auditable `Thread`. |
+| `adapters/agent.py` | `as_openai_tool()` — converts a `Capability` into OpenAI's tool-calling schema, the fourth surface alongside CLI/LangGraph/MCP. |
+| `context.py` | `ContextSource` + `build_context_pack()` — combines prioritized text blocks into one preface; over a `max_chars` budget it drops whole lowest-priority sources, never truncates mid-source. |
+| `memory.py` | `Provenance`-ranked durable memory (`human_manual > human_feedback > llm_inferred`), `JsonlMemoryStore`, and `distill()` — asks an LLM to extract durable rules from feedback text, reusing `judge.py`'s defensive-parsing discipline. |
+| `json_repair.py` | The JSON-cleanup helpers (`strip_markdown_fences`, `normalize_quotes`, `remove_trailing_commas`, `extract_json_object`) shared by `judge.py` and `memory.py`. |
 | `credentials.py` | Loads a JSON credential from a file path, base64, or raw JSON string — fails loudly instead of ever silently returning `{}`. |
 | `resilience.py` | `with_retry()` — a thin `tenacity` wrapper for exponential-backoff retries on flaky network/LLM calls. |
 | `observability.py` | structlog config + opt-in LangSmith tracing (only activates if `LANGSMITH_API_KEY`/`LANGCHAIN_API_KEY` is set). |
@@ -133,6 +151,44 @@ sink = CsvSink("out/")
 sink.write(["Company", "Summary"], [[name, summary]], destination="companies")
 ```
 
+## The agent example (`examples/task_assistant/`)
+
+A CLI chat assistant with four tools (`add_task`, `list_tasks`,
+`complete_task`, `remember_preference`) over a JSON-file task store and a
+`JsonlMemoryStore`. This is where `bounded.agent`, `bounded.context`, and
+`bounded.memory` actually come together:
+
+```bash
+uv run task-assistant
+```
+
+```
+> add a task to buy milk tomorrow
+Added "buy milk" for 2026-07-23.
+> remember that i usually check tasks in the evening
+Noted (memory: preferences/human_manual).
+```
+
+- **The LLM decides which tool to call**, unlike `company_research`'s fixed
+  graph — that's the actual difference between a Workflow and an Agent.
+- **`remember_preference` writes with `Provenance.HUMAN_MANUAL`** — the
+  user explicitly asked to be remembered. `bounded.memory.distill()` (for
+  turning raw feedback into `Provenance.LLM_INFERRED` rules) is available
+  but intentionally not wired into this toy example — it's there for a
+  domain that actually needs it, not forced in just to exercise it.
+- **Every `build_agent()` call rebuilds the system prompt from current
+  memory** via `build_context_pack()` — what you tell it to remember in one
+  session shows up in the next process's Context Pack, verified in
+  `tests/integration/test_task_assistant_agent.py`, not just asserted.
+
+**Prerequisite:** only `OPENAI_API_KEY` — no Tavily/Serper/Google Sheets
+needed for this example.
+
+**Not yet verified against a real model** — see
+[`docs/PROGRESS.md`](docs/PROGRESS.md)'s Stage 5 entry. Run a real
+conversation through `uv run task-assistant` before relying on this beyond
+what the mocked tests cover.
+
 ## Observability: LangGraph Studio + LangSmith (optional)
 
 ```bash
@@ -156,8 +212,9 @@ step. None of it is required to run the pipeline — see
 
 ```bash
 uv sync --extra dev
-uv run pytest -q                          # 62 tests: kit unit tests, fixture-based
-                                           # fetcher tests, a mocked end-to-end run
+uv run pytest -q                          # 100 tests: kit unit tests, fixture-based
+                                           # fetcher tests, and mocked end-to-end runs
+                                           # for both examples
 uv run ruff check src examples tests
 uv run ruff format src examples tests
 uv run mypy src examples

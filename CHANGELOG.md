@@ -3,6 +3,34 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Detailed rationale for each change lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
+## [0.3.0] — 2026-07-22
+
+### Added
+- `bounded.agent` — `Agent`, `Thread`, `ToolCall`, `ScopeError`: an
+  LLM-driven tool-calling loop, the third layer (Tool / Workflow / **Agent**)
+  the kit was missing. Bounded by a hard step limit, an optional code-level
+  scope guard, and every failure captured as a `ToolCall.error` instead of
+  crashing.
+- `bounded.context` — `ContextSource` + `build_context_pack()`, a
+  priority-ordered context-preface builder.
+- `bounded.memory` — `Provenance`-ranked durable memory (`JsonlMemoryStore`)
+  and `distill()` for extracting rules from feedback text.
+- `bounded.json_repair` — the JSON-cleanup helpers factored out of
+  `bounded.judge` once `bounded.memory` needed the identical logic.
+- `bounded.adapters.agent.as_openai_tool()` and a `ToolCallingLLM` protocol
+  + `OpenAIProvider.chat()`, the fourth Capability surface alongside
+  CLI/LangGraph/MCP.
+- `examples/task_assistant/` — a CLI chat agent (`uv run task-assistant`)
+  proving the above end to end: four tools, a JSON-file task store, and a
+  memory store whose contents actually show up in the next process's
+  system prompt.
+- 38 new tests (100 total, was 62).
+
+### Known gaps
+- The Agent layer is unverified against a real LLM in this environment (no
+  API key available when it was built) — mocked tests only. See
+  `docs/PROGRESS.md`'s Stage 5 entry.
+
 ## [0.2.0] — 2026-07-22
 
 ### Added
