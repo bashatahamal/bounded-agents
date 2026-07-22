@@ -3,6 +3,14 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Detailed rationale for each change lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
+## [0.3.1] — 2026-07-22
+
+### Added
+- `OpenAIProvider` accepts an optional `base_url`, so it works against any
+  OpenAI-compatible endpoint (OpenRouter, Groq, local vLLM, ...), not just
+  OpenAI itself. Added while wiring a consumer through OpenRouter's free
+  tier. Two new tests (`tests/unit/test_openai_provider.py`).
+
 ## [0.3.0] — 2026-07-22
 
 ### Added

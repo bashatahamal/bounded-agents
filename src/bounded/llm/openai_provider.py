@@ -11,8 +11,14 @@ from bounded.resilience import with_retry
 
 
 class OpenAIProvider:
-    """Thin OpenAI Chat Completions wrapper implementing `bounded.llm.LLMProvider`
-    and `bounded.llm.ToolCallingLLM`."""
+    """Thin Chat Completions wrapper implementing `bounded.llm.LLMProvider`
+    and `bounded.llm.ToolCallingLLM`.
+
+    Works against any OpenAI-compatible endpoint, not just OpenAI itself --
+    pass `base_url` for OpenRouter, Groq, a local vLLM server, etc. `model`
+    then needs to be whatever id that endpoint expects (e.g.
+    `"openai/gpt-oss-20b:free"` on OpenRouter).
+    """
 
     DEFAULT_MODEL = "gpt-5-mini"
     DEFAULT_TEMPERATURE = 1
@@ -22,8 +28,9 @@ class OpenAIProvider:
         api_key: str,
         model: str = DEFAULT_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
+        base_url: str | None = None,
     ) -> None:
-        self._client = maybe_wrap_openai(OpenAI(api_key=api_key))
+        self._client = maybe_wrap_openai(OpenAI(api_key=api_key, base_url=base_url))
         self.model = model
         self.temperature = temperature
 
