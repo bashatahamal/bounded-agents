@@ -1,6 +1,9 @@
 # Local agent/editor settings (never share tool permission grants)
 .claude/settings.local.json
 
+# task_assistant example's local task/memory data
+examples/task_assistant/data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

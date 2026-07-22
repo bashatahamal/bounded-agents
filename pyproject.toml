@@ -50,6 +50,7 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 searchapp = "company_research.main:main"
+task-assistant = "task_assistant.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src", "examples"]

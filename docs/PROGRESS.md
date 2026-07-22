@@ -34,6 +34,106 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### Stage 5 — Agent primitive — done (2026-07-22)
+
+Added the third layer this repo was missing: today `bounded` covered Tool
+(`Capability`) and Workflow (`examples/company_research`'s LangGraph
+pipeline), both fully code-controlled. This adds **Agent** — the layer
+where the LLM decides which tool to call, when, and how many times,
+producing an auditable conversation rather than a single value. The
+pattern (Context Pack, provenance-ranked memory, scope enforcement in
+code, graceful degradation) is generalized from a real production agent's
+architecture (not copied — only the shape, no code or domain specifics
+came from that codebase), kept strictly domain-agnostic, and proven with a
+new toy example, `examples/task_assistant`. Full design writeup and the
+question this closes: `C:\Users\mhbrt\.claude\plans\structured-launching-hummingbird.md`.
+
+**New in `src/bounded/`:**
+- `agent.py` — `Agent`, `Thread`, `ToolCall`, `ScopeError`. The loop itself
+  stays bounded even though the LLM controls flow inside it: a hard
+  `max_steps` cutoff (never runs forever), an optional `guard` callable
+  that runs in code before every tool call and can reject one via
+  `ScopeError`, and every failure mode (bad arguments, unknown tool name,
+  the tool's own exception, a guard rejection) captured as a
+  `ToolCall.error` instead of ever propagating and crashing the
+  conversation.
+- `context.py` — `ContextSource` + `build_context_pack()`. Combines
+  prioritized text blocks into one preface; over a `max_chars` budget it
+  drops whole lowest-priority sources (a strict priority-ordered prefix),
+  never truncates mid-source.
+- `memory.py` — `Provenance` (`human_manual > human_feedback >
+  llm_inferred`), `MemoryEntry`, `MemoryStore` protocol, `JsonlMemoryStore`
+  (file-backed, same shape as `bounded.sinks.jsonl`), `distill()` (asks an
+  LLM to extract durable rules from feedback text, reusing the same
+  defensive JSON-parsing discipline as `bounded.judge` — returns `[]`
+  rather than fabricating on unparseable output).
+- `json_repair.py` — the JSON-cleanup helpers (`strip_markdown_fences`,
+  `normalize_quotes`, `remove_trailing_commas`, `extract_json_object`,
+  `clean_json_text`) factored out of `judge.py` once `memory.py` needed
+  the identical logic — two real call sites justified the extraction;
+  `judge.py` now imports from here instead of keeping its own copies.
+- `adapters/agent.py` — `as_openai_tool()`, converting a `Capability` into
+  OpenAI's tool-calling schema, the same pattern as `adapters/mcp.py`'s
+  `as_mcp_tool()` just a different wire shape.
+- `llm/base.py` — added `ToolCallingLLM` protocol (`chat(messages, tools)
+  -> ChatResult`), `ChatResult`, `ToolCallRequest`, kept deliberately
+  separate from `LLMProvider` (`judge.py` / `summarize.py` keep depending
+  on the narrower `complete()` surface).
+- `llm/openai_provider.py` — `OpenAIProvider` gained `chat()` implementing
+  `ToolCallingLLM`, same client/retry/tracing setup as `complete()`, not a
+  new class.
+
+**New example, `examples/task_assistant/`:** a CLI chat agent
+(`uv run task-assistant`) with four tools (`add_task`, `list_tasks`,
+`complete_task`, `remember_preference`) backed by a JSON-file `TaskStore`
+and a `JsonlMemoryStore`. `remember_preference` writes with
+`Provenance.HUMAN_MANUAL` (the user explicitly asked to be remembered);
+`bounded.memory.distill()` with `Provenance.LLM_INFERRED` is available for
+inferred preferences but not wired into this toy example's flow — kept
+for a future pass rather than forced in just to exercise it. Every
+`build_agent()` call rebuilds the system prompt from current memory via
+`build_context_pack()`, so what's remembered actually shows up in the
+next process's `system_prompt` — verified directly in
+`tests/integration/test_task_assistant_agent.py`, not just asserted.
+
+**Explicitly not built** (per the plan): no Postgres/Redis, no
+embedding-based memory dedup (exact-match only, documented as a known
+gap), no bidirectional Telegram/Channel abstraction, no multi-provider
+tool-calling. Nothing about `home_app` (device state, trip detection,
+actual reminders) touches this repo — `home_app` will import `bounded` as
+a library once this ships; the dependency direction only goes one way.
+
+**Verification:**
+- `uv run ruff check` / `ruff format --check` / `mypy src examples` /
+  `pytest -q` — all clean. 100 tests total (was 62 before this stage):
+  `test_agent.py` (loop happy path, step-limit cutoff, guard rejection,
+  unknown tool, tool exception, invalid arguments, multi-turn thread
+  continuation), `test_context.py` (priority ordering, budget-drops-whole-
+  sources, never-truncates-mid-source, strict-prefix-not-bin-packing),
+  `test_memory.py` (add/list roundtrip, scope filtering, provenance
+  ranking, dedup incl. cross-scope non-dedup, persistence across store
+  instances, `distill()` happy/malformed/partially-malformed paths),
+  `test_json_repair.py`, `test_adapters_agent.py`, plus
+  `test_task_assistant_tools.py` (all four tools, no LLM) and
+  `test_task_assistant_agent.py` (two full mocked conversations end to
+  end: add-a-task, and remember-a-preference-then-see-it-in-the-next-
+  agent's-system-prompt).
+- **Not verified**: an actual live run against real OpenAI tool-calling.
+  No `OPENAI_API_KEY` is available in this sandbox (checked: no repo
+  `.env`, nothing in the shell environment) — the plan's manual
+  verification step (`uv run task-assistant`, a real conversation) could
+  not be performed. What IS verified: `OPENAI_API_KEY=fake uv run
+  task-assistant` starts the REPL and exits cleanly on EOF (proves
+  `OpenAIProvider.__init__` doesn't make a network call, and the whole
+  import/wiring chain works), and the mocked end-to-end tests above cover
+  the actual tool-calling loop logic. Flagging this the same way the
+  Docker build was flagged in Stage 1 -- **run a real conversation through
+  `uv run task-assistant` with a genuine API key before treating this as
+  fully proven.**
+
+**Next up:** none planned in this repo for now. `home_app` picks this up
+from here, privately, as its own next step.
+
 ### Transition PR — done (2026-07-22)
 
 Since the whole rebuild landed via direct pushes to `main` rather than a

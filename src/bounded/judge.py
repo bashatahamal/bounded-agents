@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 from typing import Protocol
+
+from bounded.json_repair import clean_json_text, extract_json_object
 
 
 class JudgeError(Exception):
@@ -15,30 +16,6 @@ class JudgeOutput:
     missing_fields: list[str]
     field_enrichment: dict[str, dict]
     bias_flags: dict[str, str]
-
-
-def _strip_markdown_fences(text: str) -> str:
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    return text.strip()
-
-
-def _normalize_quotes(text: str) -> str:
-    return text.replace("“", '"').replace("”", '"').replace("’", "'").replace("‘", "'")
-
-
-def _remove_trailing_commas(text: str) -> str:
-    return re.sub(r",\s*([}\]])", r"\1", text)
-
-
-def _extract_json_object(text: str) -> str | None:
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return None
-    return text[start : end + 1]
 
 
 def parse_judge_output(raw: str, allowed_fields: set[str]) -> JudgeOutput:
@@ -54,9 +31,9 @@ def parse_judge_output(raw: str, allowed_fields: set[str]) -> JudgeOutput:
     can't be salvaged -- callers should treat that the same as "judge
     unavailable" and fall back to the deterministic selection.
     """
-    text = _remove_trailing_commas(_normalize_quotes(_strip_markdown_fences(raw.strip())))
+    text = clean_json_text(raw)
 
-    json_text = _extract_json_object(text)
+    json_text = extract_json_object(text)
     if not json_text:
         raise JudgeError(f"No JSON object found in judge output: {raw!r}")
 

@@ -15,13 +15,16 @@ def _fake_credentials(monkeypatch):
     monkeypatch.setenv("GOOGLE_SHEET_ACCESS_CREDS", '{"type": "service_account"}')
 
     from company_research import fetchers, llm_client, settings
+    from task_assistant import settings as task_assistant_settings
 
     settings.get_settings.cache_clear()
     llm_client.get_llm_client.cache_clear()
     fetchers._tavily_client.cache_clear()
+    task_assistant_settings.get_settings.cache_clear()
 
     yield
 
     settings.get_settings.cache_clear()
     llm_client.get_llm_client.cache_clear()
     fetchers._tavily_client.cache_clear()
+    task_assistant_settings.get_settings.cache_clear()
