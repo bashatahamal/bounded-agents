@@ -34,6 +34,21 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### CI verified green on push — 2026-07-22
+
+The `workflow` OAuth scope (blocked back in the "Repo rename + push" entry
+below) got refreshed, so the held-back `.github/workflows/ci.yml` commit
+and the Stage 5 commit both pushed in one shot. That means CI actually ran
+for the first time on real GitHub Actions runners rather than just
+locally: both matrix jobs (Python 3.12 and 3.13, ubuntu-latest) passed --
+ruff check, ruff format --check, mypy, and the full 100-test pytest suite,
+all green, independent of this sandbox
+(https://github.com/bashatahamal/bounded-agents/actions/runs/29909615695).
+Also re-ran CI against PR #1 automatically (it targets `main` via
+`pull_request` trigger) -- also green. This is real third-party
+verification, unlike the Docker build in Stage 1 which is still only
+eyeballed, never actually built.
+
 ### Stage 5 — Agent primitive — done (2026-07-22)
 
 Added the third layer this repo was missing: today `bounded` covered Tool
