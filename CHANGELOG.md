@@ -3,6 +3,14 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Detailed rationale for each change lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
+## [0.3.2] — 2026-07-23
+
+### Added
+- `MemoryStore.delete(entry_id)` / `JsonlMemoryStore.delete(entry_id)`: removes a single
+  entry by id, returns `False` if no entry matched. Added for a consumer's memory-management
+  UI, which needed to let a user remove a remembered preference. Three new tests
+  (`tests/unit/test_memory.py`).
+
 ## [0.3.1] — 2026-07-22
 
 ### Added

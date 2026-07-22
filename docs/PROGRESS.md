@@ -34,6 +34,15 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### `MemoryStore.delete()` added — done (2026-07-23)
+
+Requested by a consumer app (`home_app`) building a memory-management UI: users could
+view remembered preferences but had no way to remove a stale or wrong one. Added
+`delete(entry_id) -> bool` to both the `MemoryStore` protocol and `JsonlMemoryStore`
+(load-all, filter out the matching id, rewrite-all — same pattern `add`/`_save` already
+use). Three new tests cover deleting an existing entry, an unknown id (returns `False`,
+doesn't raise), and persistence across store instances. Released as `v0.3.2`.
+
 ### Positioning: library vs. platform — done (2026-07-22)
 
 Prompted by a direct question: why build this instead of adopting an

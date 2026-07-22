@@ -68,6 +68,40 @@ def test_store_persists_across_instances(tmp_path):
     assert reloaded.list()[0].content == "durable fact"
 
 
+def test_delete_removes_matching_entry(tmp_path):
+    store = JsonlMemoryStore(tmp_path / "memory.jsonl")
+    keep = store.add("reminders", "keep this", Provenance.HUMAN_MANUAL)
+    gone = store.add("reminders", "delete this", Provenance.HUMAN_MANUAL)
+
+    result = store.delete(gone.id)
+
+    assert result is True
+    remaining = store.list()
+    assert len(remaining) == 1
+    assert remaining[0].id == keep.id
+
+
+def test_delete_returns_false_for_unknown_id(tmp_path):
+    store = JsonlMemoryStore(tmp_path / "memory.jsonl")
+    store.add("reminders", "keep this", Provenance.HUMAN_MANUAL)
+
+    result = store.delete("not-a-real-id")
+
+    assert result is False
+    assert len(store.list()) == 1
+
+
+def test_delete_persists_across_instances(tmp_path):
+    path = tmp_path / "memory.jsonl"
+    store = JsonlMemoryStore(path)
+    entry = store.add("reminders", "durable fact", Provenance.HUMAN_MANUAL)
+
+    store.delete(entry.id)
+    reloaded = JsonlMemoryStore(path)
+
+    assert reloaded.list() == []
+
+
 class _StubLLM:
     def __init__(self, text: str):
         self.text = text

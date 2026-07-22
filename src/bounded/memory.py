@@ -44,6 +44,7 @@ class MemoryEntry:
 class MemoryStore(Protocol):
     def add(self, scope: str, content: str, provenance: Provenance) -> MemoryEntry: ...
     def list(self, scope: str | None = None) -> list[MemoryEntry]: ...
+    def delete(self, entry_id: str) -> bool: ...
 
 
 class JsonlMemoryStore:
@@ -128,6 +129,16 @@ class JsonlMemoryStore:
         if scope is not None:
             entries = [e for e in entries if e.scope == scope]
         return sorted(entries, key=lambda e: (_PROVENANCE_RANK[e.provenance], e.created_at))
+
+    def delete(self, entry_id: str) -> bool:
+        """Remove a single entry by id. Returns False if no entry matched."""
+        with self._lock:
+            entries = self._load()
+            remaining = [e for e in entries if e.id != entry_id]
+            if len(remaining) == len(entries):
+                return False
+            self._save(remaining)
+            return True
 
 
 @dataclass(frozen=True)
