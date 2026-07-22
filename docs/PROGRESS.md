@@ -34,6 +34,42 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### Repo rename + push — done (2026-07-22)
+
+- Renamed the GitHub repo `search-to-sheets` → `bounded-agents` via
+  `gh repo rename` (GitHub keeps the old URL as a redirect). Updated the
+  repo's description metadata to match (it's a separate field from
+  `README.md` — easy to forget).
+- **Push hit a snag**: the authenticated `gh`/git token (`bashatahamal`,
+  the repo owner) has scopes `admin:public_key, gist, read:org, repo` —
+  no `workflow` scope, so GitHub rejected any push touching
+  `.github/workflows/ci.yml`. A second logged-in account
+  (`bashatahamal-bais`) *does* have the `workflow` scope but only has
+  read (`pull`) access to this repo, not push — so switching accounts
+  wasn't a fix, just a dead end (checked via `gh api
+  repos/.../permissions` before assuming otherwise).
+- Asked how to handle it rather than guessing; the answer was to push
+  everything except that one file now. Since none of the three staged
+  commits (Stage 0 / Stages 1-3 / Stage 4) had been pushed yet — the
+  earlier `git push` failed atomically, so nothing partial landed —
+  reorganizing local-only history was safe: `git reset --soft` back to
+  the original base, dropped `ci.yml` from the index, and re-committed
+  everything as one squashed commit (fine to squash here specifically
+  *because* it was still 100% unpublished; this is not the general
+  practice for this repo going forward).
+- Pushed `3550ff7` to `bashatahamal/bounded-agents`. Re-ran the full
+  `make check` against that exact commit before pushing, not just
+  before the squash.
+- Committed `.github/workflows/ci.yml` again locally right after
+  (`e2f66df`) — sitting on `main`, not pushed. Push it once the scope is
+  refreshed:
+  ```bash
+  gh auth refresh -h github.com -s workflow
+  git push origin main
+  ```
+
+**Status: done**, modulo that one follow-up push above.
+
 ### Stage 4 — done (2026-07-22)
 
 - `README.md` rewritten from scratch: leads with the "authority in code,
