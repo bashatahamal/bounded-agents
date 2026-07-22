@@ -29,6 +29,18 @@ Two things live here:
   assistant that manages tasks and remembers preferences). Neither is an
   abstraction exercise; both are what prove the kit holds together.
 
+**This is a library, not a platform.** There's no service to deploy, no
+messaging gateway, no scheduler, no skill marketplace — `bounded` has none
+of that, on purpose. You `import bounded` into an application that already
+has its own bot, its own control loop, its own scheduler, and add one
+scoped, auditable capability to it. If what you actually want is a
+standalone autonomous assistant with built-in Telegram/Discord/WhatsApp
+gateways and a skill registry, a platform like
+[OpenClaw](https://github.com/orgs/openclaw/repositories) or
+[Hermes Agent](https://github.com/nousresearch/hermes-agent) is the better
+tool for that job — see [`docs/COMPARISON.md`](docs/COMPARISON.md) for an
+honest side-by-side instead of a hand-wave.
+
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the design rationale, and
 [`docs/PROGRESS.md`](docs/PROGRESS.md) for how this repo got here (including
 which parts of the Agent layer are unverified against a real LLM — read

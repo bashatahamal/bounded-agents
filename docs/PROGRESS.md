@@ -34,6 +34,28 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### Positioning: library vs. platform — done (2026-07-22)
+
+Prompted by a direct question: why build this instead of adopting an
+existing agent framework (OpenClaw, Hermes Agent)? Researched both for
+real (not from memory) before answering — see the chat transcript around
+this timestamp for sources. Conclusion, written down so it doesn't have to
+be re-argued from scratch later: OpenClaw and Hermes Agent are self-hosted
+*platforms* (their own process, messaging gateway, scheduler, skill
+marketplace); `bounded` is a *library* with none of that, meant to be
+imported into an app that already has its own control plane. Different
+problems, not competing answers to the same one.
+
+Added `docs/COMPARISON.md` — an honest side-by-side (what each actually
+is, dependencies, autonomy model, license, maturity), plus a "when each is
+the right call" section. Linked from the README intro, which now leads
+with "this is a library, not a platform" instead of leaving that implicit.
+Concrete numbers used instead of hand-waving: `src/bounded/` is ~1,180
+LOC across 26 files, and its own runtime imports are just `pydantic`,
+`openai` and `gspread` (both only needed if you use those specific
+pieces), `tenacity`, and `structlog` — no Node.js, no messaging gateway,
+no scheduler, no vector DB.
+
 ### CI verified green on push — 2026-07-22
 
 The `workflow` OAuth scope (blocked back in the "Repo rename + push" entry
