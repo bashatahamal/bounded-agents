@@ -2,7 +2,7 @@
   "$schema": "https://langgra.ph/schema.json",
   "dependencies": ["."],
   "graphs": {
-    "search": "./src/graphs/main.py:graph"
+    "company_research": "./examples/company_research/graph.py:graph"
   },
   "env": ".env"
 }

@@ -3,7 +3,13 @@ __pycache__/
 .git/
 .venv/
 .mypy_cache/
+.ruff_cache/
+.pytest_cache/
 .env
 sts/
 *copy*
 .langgraph_api/
+tests/
+docs/
+.github/
+assets/

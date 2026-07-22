@@ -1,3 +1,6 @@
+# Local agent/editor settings (never share tool permission grants)
+.claude/settings.local.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

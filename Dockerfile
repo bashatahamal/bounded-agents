@@ -1,34 +1,48 @@
-FROM python:3.12-slim
+# syntax=docker/dockerfile:1
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# --- builder ---------------------------------------------------------------
+FROM python:3.12-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       build-essential \
-       curl \
-    && rm -rf /var/lib/apt/lists/*
+# Dependency layer: cached as long as pyproject.toml / uv.lock don't change,
+# independent of application source changes.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --extra dev
 
-# copy ONLY dependency metadata
-COPY pyproject.toml README.md langgraph.json ./
-
-# Copy source BEFORE install
+# Now the actual source, then install the project itself.
 COPY src ./src
+COPY examples ./examples
+COPY README.md langgraph.json ./
 
-# Install build tooling once
-RUN pip install --upgrade pip setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra dev
 
-# Install runtime deps (cached unless pyproject.toml changes)
-RUN pip install .
+# --- runtime -----------------------------------------------------------------
+FROM python:3.12-slim AS runtime
 
-# Install LangGraph CLI (rarely changes)
-RUN pip install "langgraph-cli[inmem]>=0.1.71"
+RUN groupadd --system app && useradd --system --gid app --create-home --home-dir /app app
 
-# copy application code LAST
-# COPY src ./src
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+COPY --from=builder --chown=app:app /app /app
+
+USER app
 
 EXPOSE 1024
 
-CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "1024"]
+# Runs the LangGraph dev server for interactive tracing/debugging (see
+# docs/DESIGN.md, "Observability"). For a plain batch run against a
+# spreadsheet instead, override the command: `docker run ... searchapp <id>`.
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "1024", "--no-browser"]
