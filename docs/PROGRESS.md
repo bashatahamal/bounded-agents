@@ -34,6 +34,25 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### Transition PR — done (2026-07-22)
+
+Since the whole rebuild landed via direct pushes to `main` rather than a
+branch + PR, there was no single reviewable artifact showing the "before"
+and "after" together. Added one retroactively:
+
+- Pushed a `legacy/search-to-sheets` branch pinned at `5219d27` — the last
+  commit before Stage 0 touched anything.
+- Opened [PR #1](https://github.com/bashatahamal/bounded-agents/pull/1)
+  (base: `legacy/search-to-sheets`, head: `main`): the full 86-file diff,
+  with a description that reuses the existing `assets/` screenshots
+  (`main-graph.png`, `judge-node.png`, `selectsource.png`) to explain the
+  "authority in code, phrasing in the LLM" idea, framed as an engineering
+  decision — no mention of the circumstances that prompted the rebuild.
+  The PR body says plainly that it mirrors what's already on `main` and
+  exists for reviewability, not as pending work.
+- Not merged (nothing to merge — `main` already has this state) and not
+  intended to be; it's a standalone, permanently linkable artifact.
+
 ### Repo rename + push — done (2026-07-22)
 
 - Renamed the GitHub repo `search-to-sheets` → `bounded-agents` via
