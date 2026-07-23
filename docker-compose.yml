@@ -1,16 +1,15 @@
 services:
-  search-to-sheets-agent:
+  bounded-agents:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: search-to-sheets
+    container_name: bounded-agents
     ports:
       - "1024:1024"
     volumes:
       - ./src:/app/src
+      - ./examples:/app/examples
     env_file:
       - .env
-    environment:
-      PYTHONPATH: /app/src
-    command: ["langgraph", "dev", "--host", "0.0.0.0", "--port", "1024"]
+    command: ["langgraph", "dev", "--host", "0.0.0.0", "--port", "1024", "--no-browser"]
     restart: unless-stopped
