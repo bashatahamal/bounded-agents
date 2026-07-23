@@ -34,6 +34,19 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### `EmptyCompletionError` for empty-choices responses — done (2026-07-23)
+
+Found live: a real conversation against `google/gemma-4-26b-a4b-it:free` (via OpenRouter) hit
+`TypeError: 'NoneType' object is not subscriptable` inside `OpenAIProvider.chat()` --
+`response.choices` came back empty even though the HTTP call itself succeeded (no
+`APIStatusError`). Free-tier models occasionally return a degraded response shaped like this
+instead of a clean error. Added a `choices` check before indexing in both `complete()` and
+`chat()`, raising a new `EmptyCompletionError` (model name + raw response body included) on
+empty, and added it to both methods' `with_retry(retry_on=...)` tuple so a transient instance
+of this gets retried automatically rather than failing the caller's whole turn. Three new
+tests, including one that confirms the retry path actually recovers on a second attempt.
+Released as `v0.3.4`.
+
 ### Multimodal (image) message support — done (2026-07-23)
 
 Requested by `home_app` for a Telegram photo-input feature (expense-receipt reading). Turned

@@ -3,6 +3,17 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Detailed rationale for each change lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
+## [0.3.4] — 2026-07-23
+
+### Fixed
+- `OpenAIProvider.complete()`/`.chat()` crashed with an opaque `TypeError: 'NoneType' object is
+  not subscriptable` when a response came back with empty/no `choices` -- seen in real use
+  against a free OpenRouter model (a degraded-but-200 response, not a raised API error). Now
+  raises a clear `EmptyCompletionError` (with the model name and raw response body) instead,
+  and it's wired into `with_retry`'s `retry_on` so a transient empty response gets retried
+  rather than failing the whole turn outright. Three new tests
+  (`tests/unit/test_openai_provider.py`).
+
 ## [0.3.3] — 2026-07-23
 
 ### Added

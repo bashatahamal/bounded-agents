@@ -10,6 +10,18 @@ from bounded.observability import maybe_wrap_openai
 from bounded.resilience import with_retry
 
 
+class EmptyCompletionError(Exception):
+    """Raised when a chat completion response has no choices.
+
+    Seen in practice against a free OpenRouter model: the HTTP call
+    succeeds (no APIStatusError) but the parsed response's `choices` is
+    empty/None -- a transient upstream hiccup (rate limiting or a
+    degraded response disguised as success), not a client bug. Without
+    this check, indexing `response.choices[0]` raises an opaque
+    `TypeError: 'NoneType' object is not subscriptable` with no clue why.
+    """
+
+
 class OpenAIProvider:
     """Thin Chat Completions wrapper implementing `bounded.llm.LLMProvider`
     and `bounded.llm.ToolCallingLLM`.
@@ -34,7 +46,9 @@ class OpenAIProvider:
         self.model = model
         self.temperature = temperature
 
-    @with_retry(retry_on=(APIConnectionError, APITimeoutError, APIStatusError))
+    @with_retry(
+        retry_on=(APIConnectionError, APITimeoutError, APIStatusError, EmptyCompletionError)
+    )
     def complete(self, *, user_input: str, system_prompt: str | None = None) -> str:
         if not user_input and not system_prompt:
             raise ValueError("Either 'user_input' or 'system_prompt' must be provided.")
@@ -50,9 +64,15 @@ class OpenAIProvider:
             messages=messages,
             temperature=self.temperature,
         )
+        if not response.choices:
+            raise EmptyCompletionError(
+                f"model={self.model!r} returned no choices: {response.model_dump_json()}"
+            )
         return response.choices[0].message.content or ""
 
-    @with_retry(retry_on=(APIConnectionError, APITimeoutError, APIStatusError))
+    @with_retry(
+        retry_on=(APIConnectionError, APITimeoutError, APIStatusError, EmptyCompletionError)
+    )
     def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ChatResult:
         response = self._client.chat.completions.create(
             model=self.model,
@@ -61,6 +81,10 @@ class OpenAIProvider:
             tool_choice="auto",
             temperature=self.temperature,
         )
+        if not response.choices:
+            raise EmptyCompletionError(
+                f"model={self.model!r} returned no choices: {response.model_dump_json()}"
+            )
         message = response.choices[0].message
 
         tool_calls = [
