@@ -1,6 +1,6 @@
 [project]
 name = "bounded-agents"
-version = "0.3.2"
+version = "0.3.3"
 description = "Deterministic orchestration for LLM pipelines: authority in code, phrasing in the LLM. Company research is the reference example."
 readme = "README.md"
 requires-python = ">=3.12"

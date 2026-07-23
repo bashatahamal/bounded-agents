@@ -74,11 +74,20 @@ class Agent:
         self.max_steps = max_steps
         self.guard = guard
 
-    def run(self, user_input: str, thread: Thread | None = None) -> Thread:
+    def run(
+        self, user_input: str | list[dict[str, Any]], thread: Thread | None = None
+    ) -> Thread:
         """Run one user turn to completion: possibly several tool calls,
         ending either in a text answer or a step-limit cutoff. Pass a prior
         `Thread` back in to continue the same conversation; omit it to
         start a new one.
+
+        `user_input` is usually plain text, but a vision-capable model also
+        accepts OpenAI-shaped multimodal content: a list of
+        `{"type": "text", ...}` / `{"type": "image_url", ...}` parts (see
+        `bounded.llm.base.image_message_content()`). Either shape is passed
+        straight through as the message's `content` -- bounded doesn't
+        interpret it.
         """
         if thread is None:
             thread = Thread(messages=[{"role": "system", "content": self.system_prompt}])

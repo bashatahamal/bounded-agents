@@ -41,3 +41,23 @@ class ToolCallingLLM(Protocol):
     """
 
     def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ChatResult: ...
+
+
+def image_message_content(text: str, image_data_uri: str) -> list[dict[str, Any]]:
+    """Build OpenAI-shaped multimodal message content: text plus one image.
+
+    Pass the result as `Agent.run()`'s `user_input` (or as a message's
+    `content` directly) against a vision-capable model. `image_data_uri`
+    should be a `data:image/...;base64,...` URI -- passing a bare remote URL
+    works too if the provider can fetch it, but a data URI keeps the image
+    out of any third party's server logs, which matters more for a photo of
+    something like a receipt than a normal chat prompt.
+
+    A plain OpenAI-compatible `OpenAIProvider.chat()` needs no changes to
+    accept this: it passes `messages` straight through to the API, which
+    already supports this content shape natively.
+    """
+    return [
+        {"type": "text", "text": text},
+        {"type": "image_url", "image_url": {"url": image_data_uri}},
+    ]

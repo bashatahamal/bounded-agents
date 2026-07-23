@@ -3,6 +3,17 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Detailed rationale for each change lives in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
+## [0.3.3] — 2026-07-23
+
+### Added
+- `bounded.llm.base.image_message_content(text, image_data_uri)`: builds OpenAI-shaped
+  multimodal message content (a text part plus an image part) for vision-capable models.
+  `Agent.run()`'s `user_input` type widened to `str | list[dict[str, Any]]` to accept it.
+  No change was needed in `OpenAIProvider.chat()` itself -- it already passes `messages`
+  straight through to the API, which natively supports this content shape. Two new tests
+  (`tests/unit/test_agent.py`, `tests/unit/test_llm_base.py`). Added for a consumer wiring up
+  Telegram photo input to an agent already built on this kit.
+
 ## [0.3.2] — 2026-07-23
 
 ### Added

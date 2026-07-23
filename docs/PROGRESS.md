@@ -34,6 +34,18 @@ Naming: package `bounded`, repo `bounded-agents` (renamed in place from
 
 ## Log
 
+### Multimodal (image) message support — done (2026-07-23)
+
+Requested by `home_app` for a Telegram photo-input feature (expense-receipt reading). Turned
+out to need less than expected: `OpenAIProvider.chat()` already passes `messages` straight
+through to the API with no reshaping, so it already accepted OpenAI's multimodal content shape
+(a list of `{"type": "text", ...}` / `{"type": "image_url", ...}` parts) with zero changes.
+The actual gaps were (1) `Agent.run()`'s `user_input` type hint declaring `str` only, now
+widened to `str | list[dict[str, Any]]`, and (2) no shared helper for building that content
+shape, so every consumer would hand-roll the same dict -- added
+`bounded.llm.base.image_message_content(text, image_data_uri)`. Two new tests confirm `Agent`
+passes multimodal content through to the underlying LLM call unchanged. Released as `v0.3.3`.
+
 ### `MemoryStore.delete()` added — done (2026-07-23)
 
 Requested by a consumer app (`home_app`) building a memory-management UI: users could

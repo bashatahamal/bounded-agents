@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from bounded.agent import Agent, ScopeError
 from bounded.capability import Capability
-from bounded.llm.base import ChatResult, ToolCallRequest
+from bounded.llm.base import ChatResult, ToolCallRequest, image_message_content
 
 
 class AddIn(BaseModel):
@@ -134,3 +134,22 @@ def test_agent_continues_an_existing_thread_across_turns():
     # both user turns are preserved in message history
     user_messages = [m["content"] for m in thread.messages if m["role"] == "user"]
     assert user_messages == ["first question", "second question"]
+
+
+def test_agent_accepts_multimodal_content_as_user_input():
+    llm = _ScriptedLLM([_final("that's a cat")])
+    agent = Agent(llm=llm, tools=[add_capability], system_prompt="x")
+    content = image_message_content("what is this?", "data:image/jpeg;base64,abc123")
+
+    thread = agent.run(content)
+
+    assert thread.final_answer == "that's a cat"
+    user_message = next(m for m in thread.messages if m["role"] == "user")
+    assert user_message["content"] == content
+    # exactly what reached the LLM -- bounded never inspects or reshapes it.
+    # (llm.calls[0] aliases thread.messages itself, which gains the
+    # assistant's reply after this call returns, so look up by role rather
+    # than by a now-stale trailing index.)
+    sent_messages, _ = llm.calls[0]
+    sent_user_message = next(m for m in sent_messages if m["role"] == "user")
+    assert sent_user_message["content"] == content
